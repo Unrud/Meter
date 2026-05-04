@@ -23,7 +23,8 @@ network.country(config.WIFI_COUNTRY)
 network.hostname(config.HOSTNAME)
 __nic = network.WLAN(network.STA_IF)
 
-__message = None
+# MessageT = list[None | bytes | bool | int | 'MessageT']
+__message = None  # type: 'MessageT' | None
 __buf = memoryview(bytearray(DATA_BUF_SIZE))
 __buf_len = 0
 
@@ -391,36 +392,42 @@ def data(request):
 @app.get("/raw-data")
 def raw_data(request):
     async def stream():
-        yield ""
-        if __message is None:
-            return
-        message_stack = [[0, m] for m in reversed(__message)]
+        message_stack = [[0, __message]]
+        prev_depth = None
         while message_stack:
             depth, message = message_stack.pop()
+            if prev_depth is not None:
+                if depth == prev_depth:
+                    yield ","
+                yield "\n"
+            prev_depth = depth
+            yield "    " * depth
             if isinstance(message, list):
-                yield "    " * depth
-                yield "[\n"
+                yield "["
                 message_stack.append([depth, "]"])
                 message_stack.extend([depth + 1, m] for m in reversed(message))
             else:
-                yield "    " * depth
                 if isinstance(message, bytes):
-                    yield "("
+                    yield '"'
                     for i, c in enumerate(message):
-                        if i:
+                        if i > 0:
                             yield " "
                         yield f"{c:02X}"
-                    yield ")"
+                    yield '"'
+                elif message is None:
+                    yield "null"
+                elif message is True:
+                    yield "true"
+                elif message is False:
+                    yield "false"
                 else:
                     yield str(message)
-                if message_stack:
-                    yield ","
-                yield "\n"
+        yield "\n"
 
     return Response(
         body=stream(),
         status_code=200,
-        headers={"Content-Type": "text/plain; charset=utf-8"},
+        headers={"Content-Type": "application/json"},
     )
 
 
