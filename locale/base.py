@@ -32,5 +32,5 @@ class BaseTranslation:
         if value < 0:
             s = f"-{s}"
         if unit:
-            s += f" {unit}"
+            s += f"\u202f{unit}"
         return s
