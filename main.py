@@ -371,8 +371,10 @@ def data(request):
         "activeEnergyFeed": __active_energy_feed,
         "activePower": __active_power,
         "activePowerAvg": (
-            sum(map(lambda e: e[1], __active_power_history))
-            / len(__active_power_history)
+            round(
+                sum(map(lambda e: e[1], __active_power_history))
+                / len(__active_power_history)
+            )
             if __active_power_history
             else None
         ),
