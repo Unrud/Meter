@@ -366,28 +366,32 @@ def index(request):
 def data(request):
     if not check_connection():
         return "No Data", 503
+    active_power_avg = None
+    active_power_import_avg = None
+    active_power_feed_avg = None
+    active_power_min = None
+    active_power_max = None
+    if __active_power_history:
+        active_power_import_avg = sum(
+            max(0, e[1]) for e in __active_power_history
+        ) / len(__active_power_history)
+        active_power_feed_avg = -sum(
+            min(0, e[1]) for e in __active_power_history
+        ) / len(__active_power_history)
+        active_power_avg = round(active_power_import_avg - active_power_feed_avg)
+        active_power_import_avg = round(active_power_import_avg)
+        active_power_feed_avg = round(active_power_feed_avg)
+        active_power_min = min(e[1] for e in __active_power_history)
+        active_power_max = max(e[1] for e in __active_power_history)
     return {
         "activeEnergyImport": __active_energy_import,
         "activeEnergyFeed": __active_energy_feed,
         "activePower": __active_power,
-        "activePowerAvg": (
-            round(
-                sum(map(lambda e: e[1], __active_power_history))
-                / len(__active_power_history)
-            )
-            if __active_power_history
-            else None
-        ),
-        "activePowerMin": (
-            min(map(lambda e: e[1], __active_power_history))
-            if __active_power_history
-            else None
-        ),
-        "activePowerMax": (
-            max(map(lambda e: e[1], __active_power_history))
-            if __active_power_history
-            else None
-        ),
+        "activePowerAvg": active_power_avg,
+        "activePowerImportAvg": active_power_import_avg,
+        "activePowerFeedAvg": active_power_feed_avg,
+        "activePowerMin": active_power_min,
+        "activePowerMax": active_power_max,
     }
 
 
